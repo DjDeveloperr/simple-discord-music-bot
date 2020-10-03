@@ -27,7 +27,7 @@ client.on("message", async (message) => {
 
   const args = message.content.slice(prefix.length).trim().split(/\s+/);
   const command = args.shift(); //Removes the first item (command) from the args:<Array>
-  const argString = message.content.slice(prefix.length).trim().slice(command.length).trim();
+  let argString = message.content.slice(prefix.length).trim().slice(command.length).trim();
   if(argString == '') argString = null;
 
   let songConstruct = songConstructs.get(message.guild.id);
