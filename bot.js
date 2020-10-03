@@ -1,22 +1,24 @@
 const Discord = require("discord.js");
 const { prefix, token } = require("./config.json");
 const { getYoutubeVideoInfo } = require("./api/youtube");
+const { log } = require("./util/logger");
+const SongConstruct = require("./util/SongConstruct");
+
+const client = new Discord.Client();
+const songConstructs = new Map(); // Handles the song queues for all guilds
 
 // Commands
 const { play } = require("./commands/play");
 const { skip } = require("./commands/skip");
 const { stop } = require("./commands/stop");
-const { remove } = require("./commands/remove.js");
-const { seek } = require("./commands/seek.js");
-const { changeOrder } = require("./commands/changeOrder.js");
+const { remove } = require("./commands/remove");
+const { seek } = require("./commands/seek");
+const { changeOrder } = require("./commands/changeOrder");
 const { queue } = require("./commands/queue");
 const { suggest } = require("./commands/suggest");
 
-const client = new Discord.Client();
-const songConstructs = new Map(); // Handles the song queues for all guilds
-
 client.once("ready", () => {
-  console.log("Ready");
+  log("Connection",`Logged in as ${client.user.tag}!`);
 });
 
 client.on("message", async (message) => {
@@ -27,23 +29,15 @@ client.on("message", async (message) => {
 
   const args = message.content.slice(prefix.length).trim().split(/\s+/);
   const command = args.shift(); //Removes the first item (command) from the args:<Array>
-  const argString = message.content.slice(prefix.length).trim().slice(command.length).trim();
+  let argString = message.content.slice(prefix.length).trim().slice(command.length).trim();
   if(argString == '') argString = null;
 
   let songConstruct = songConstructs.get(message.guild.id);
 
   if (!songConstruct) {
     //If a songconstruct for the guild does not exist, create it!
-    const newSongConstruct = {
-      connection: null,
-      volume: 5,
-      songs: [],
-      playing: false,
-    };
-
-    songConstructs.set(message.guild.id, newSongConstruct);
-    //Sets the songConstruct for the guild
-    songConstruct = newSongConstruct;
+    songConstruct = new SongConstruct();
+    songConstructs.set(message.guild.id, songConstruct);
   }
 
   switch (command) {
@@ -51,7 +45,7 @@ client.on("message", async (message) => {
       const songName = argString;
       const songInfo = await getYoutubeVideoInfo(songName.toLowerCase());
       if (!songInfo) return message.channel.send("No such song.");
-      songConstruct.songs.push(songInfo);
+      songConstruct.addSong(songInfo);
       await play(message, songConstruct);
       break;
 
